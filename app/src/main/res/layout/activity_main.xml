@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorBack"
-    tools:context="com.example.dell.vm.MainActivity">
+    tools:context="com.example.dell.vm.ui.activity.MainActivity">
 
     <include
         layout="@layout/activity_main_content"/>

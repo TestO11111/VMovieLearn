@@ -1,9 +1,8 @@
-package com.example.dell.vm;
+package com.example.dell.vm.ui.activity;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -18,10 +17,10 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.dell.vm.R;
+
 import java.util.Timer;
 import java.util.TimerTask;
-
-import butterknife.BindView;
 
 //public class MainActivity extends AppCompatActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener{
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener {
@@ -58,6 +57,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private OnTitleClickListener onTitleClickListener;
 
+    public void setOnTitleClickListener(OnTitleClickListener onTitleClickListener) {
+        this.onTitleClickListener = onTitleClickListener;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
