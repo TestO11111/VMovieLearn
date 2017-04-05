@@ -1,18 +1,376 @@
 package com.example.dell.vm;
 
+import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.content.Intent;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.KeyEvent;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.Timer;
+import java.util.TimerTask;
 
+import butterknife.BindView;
+
+//public class MainActivity extends AppCompatActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, RadioGroup.OnCheckedChangeListener {
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private Fragment mShowFragment;//正在显示的Fragment
+    private boolean isExit;//双击退出的标志位
+
+    //    @BindView(R.id.activity_main_cover)
+    private View mCover;
+    //    @BindView(R.id.activity_main_open_side)
+    private ImageView openCover;
+    //    @BindView(R.id.activity_main_cover_close)
+    private ImageView mCloseCover;
+    //    @BindView(R.id.activity_main_cover_rg)
+    private RadioGroup mRg;
+    //    @BindView(R.id.activity_main_cover_rg_home)
+    private RadioButton mRg_Home;
+    //    @BindView(R.id.activity_main_cover_rg_series)
+    private RadioButton mRg_Series;
+    //    @BindView(R.id.activity_main_cover_rg_behind)
+    private RadioButton mRg_Behind;
+    //    @BindView(R.id.activity_main_title)
+    private TextView mTitle;
+    //    @BindView(R.id.activity_main_home_title)
+    private View mHomeTitle;
+    //    @BindView(R.id.activity_main_home_indicator)
+    private View mIndicator;
+    //    @BindView(R.id.activity_main_search)
+    private ImageView mSearch;
+    //    @BindView(R.id.activity_main_home_title_movie_list)
+    private TextView mMovieListTitle;
+    //    @BindView(R.id.activity_main_home_title_channel_list)
+    private TextView mChannelListTitle;
+
+    private OnTitleClickListener onTitleClickListener;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initView();
     }
 
+    private void initView() {
+        mCover = findViewById(R.id.activity_main_cover);
+        ImageView click_login = (ImageView) findViewById(R.id.activity_main_cover_click_to_login);
+        click_login.setOnClickListener(this);
+
+
+        openCover = (ImageView) findViewById(R.id.activity_main_open_side);
+        openCover.setOnClickListener(this);
+        mCloseCover = (ImageView) findViewById(R.id.activity_main_cover_close);
+        mCloseCover.setOnClickListener(this);
+
+        mRg = (RadioGroup) findViewById(R.id.activity_main_cover_rg);
+        mRg.setOnCheckedChangeListener(this);
+        mRg_Home = (RadioButton) findViewById(R.id.activity_main_cover_rg_home);
+        mRg_Series = (RadioButton) findViewById(R.id.activity_main_cover_rg_series);
+        mRg_Behind = (RadioButton) findViewById(R.id.activity_main_cover_rg_behind);
+
+
+        mRg_Home.setOnClickListener(this);
+        mRg_Series.setOnClickListener(this);
+        mRg_Behind.setOnClickListener(this);
+
+
+        mTitle = (TextView) findViewById(R.id.activity_main_title);
+        mHomeTitle = findViewById(R.id.activity_main_home_title);
+        mIndicator = findViewById(R.id.activity_main_home_indicator);
+        mSearch = (ImageView) findViewById(R.id.activity_main_search);
+        mSearch.setOnClickListener(this);
+
+        mMovieListTitle = (TextView) findViewById(R.id.activity_main_home_title_movie_list);
+        mChannelListTitle = (TextView) findViewById(R.id.activity_main_home_title_channel_list);
+        mMovieListTitle.setOnClickListener(this);
+        mChannelListTitle.setOnClickListener(this);
+
+
+        //设置第一个为选中
+        /**
+         * 注意，此时mTitle未初始化，若将设置选中写在前面，会有空指针异常
+         */
+        mRg_Home.setChecked(true);
+
+
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.activity_main_open_side:
+                showCover();
+                break;
+            case R.id.activity_main_cover_close:
+                closeCover();
+                break;
+//            case R.id.activity_main_cover_click_to_login:
+//                mDrawer.openDrawer(Gravity.RIGHT);
+//                break;
+//            case R.id.side_drawer_close:
+//                if (mDrawer.isDrawerOpen(Gravity.RIGHT)) {
+//                    mDrawer.closeDrawer(Gravity.RIGHT);
+//                }
+//                break;
+
+            case R.id.activity_main_cover_rg_home:
+            case R.id.activity_main_cover_rg_series:
+            case R.id.activity_main_cover_rg_behind:
+                //如果Cover正在显示，则隐藏Cover
+                hideCover();
+                break;
+            case R.id.activity_main_search:
+                // TODO: 2017/3/6 跳转搜索页面
+
+                break;
+            //点击的时候，触发接口中的方法
+            case R.id.activity_main_home_title_movie_list:
+                if (onTitleClickListener != null) {
+                    onTitleClickListener.onMovieTitleClick();
+                    TextView check = (TextView) findViewById(R.id.activity_main_home_title_channel_list);
+                    TextView uncheck = (TextView) findViewById(R.id.activity_main_home_title_movie_list);
+                    check.setTextColor(getResources().getColor(R.color.colorGray6));
+                    uncheck.setTextColor(getResources().getColor(R.color.colorWhite));
+                }
+                break;
+            case R.id.activity_main_home_title_channel_list:
+                if (onTitleClickListener != null) {
+                    onTitleClickListener.onChannelTitleClick();
+                    TextView check = (TextView) findViewById(R.id.activity_main_home_title_movie_list);
+                    TextView uncheck = (TextView) findViewById(R.id.activity_main_home_title_channel_list);
+                    check.setTextColor(getResources().getColor(R.color.colorGray6));
+                    uncheck.setTextColor(getResources().getColor(R.color.colorWhite));
+                }
+                break;
+
+            case R.id.activity_main_cover_click_to_login:
+//                startActivity(new Intent(this,LoginActivity.class));
+                break;
+
+
+        }
+    }
+
+
+    private void showCover() {
+        mCover.setVisibility(View.VISIBLE);
+
+        Log.e(TAG, "showCover: " + mCover.getVisibility());
+        //控制按钮的动画
+        /**
+         * 使用渐变动画实现，每个实现之间有一定延迟
+         */
+        mRg_Home.setAlpha(0);
+        mRg_Series.setAlpha(0);
+        mRg_Behind.setAlpha(0);
+
+        ObjectAnimator home = ObjectAnimator.ofFloat(mRg_Home, "alpha", 0, 1);
+        home.setDuration(300);
+        ObjectAnimator series = ObjectAnimator.ofFloat(mRg_Series, "alpha", 0, 1);
+        series.setDuration(300);
+        ObjectAnimator behind = ObjectAnimator.ofFloat(mRg_Behind, "alpha", 0, 1);
+        behind.setDuration(300);
+        AnimatorSet rgSet = new AnimatorSet();
+        rgSet.play(home);
+        rgSet.play(series).after(300);
+        rgSet.play(behind).after(600);
+        rgSet.start();
+
+        //关闭按钮的动画
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(mCloseCover, "scaleX", 0, 1.2f, 1);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(mCloseCover, "scaleY", 0, 1.2f, 1);
+
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.setDuration(500);
+        animatorSet.play(scaleX).with(scaleY);
+        animatorSet.start();
+
+    }
+
+    private void closeCover() {
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(mCloseCover, "scaleX", 1, 1.2f, 0);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(mCloseCover, "scaleY", 1, 1.2f, 0);
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.setDuration(500);
+        animatorSet.play(scaleX).with(scaleY);
+        animatorSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                mCover.setVisibility(View.GONE);
+
+                Log.e(TAG, "onAnimationEnd: " + mCover.getVisibility());
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        animatorSet.start();
+
+
+    }
+
+    private void hideCover() {
+        if (mCover.getVisibility() == View.VISIBLE) {
+            mCover.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onCheckedChanged(RadioGroup radioGroup, int i) {
+        switch (i) {
+            case R.id.activity_main_cover_rg_home:
+//                switchPage(HomeFragment.TAG);
+                mTitle.setVisibility(View.GONE);
+                mHomeTitle.setVisibility(View.VISIBLE);
+                break;
+            case R.id.activity_main_cover_rg_series:
+//                switchPage(SeriesFragment.TAG);
+                mHomeTitle.setVisibility(View.GONE);
+                mTitle.setVisibility(View.VISIBLE);
+                mTitle.setText("系列");
+                break;
+            case R.id.activity_main_cover_rg_behind:
+//                switchPage(BehindFragment.TAG);
+                mHomeTitle.setVisibility(View.GONE);
+                mTitle.setVisibility(View.VISIBLE);
+                mTitle.setText("幕后");
+                break;
+        }
+        mCover.setVisibility(View.GONE);
+
+    }
+
+    /**
+     * 页面切换控制
+     *
+     * @param tag 通过tag动态加载Fragment
+     */
+    public void switchPage(String tag) {
+        /**
+         * ①隐藏正在像是的页面
+         * ②显示要显示的页面
+         *      1.去缓存中查找相应的Fragment并显示
+         *      2.若没有找到则重新实例化，添加到缓存中，然后显示
+         *
+         *  动态添加Fragment
+         *  ①获取一个FragmentManager
+         *  ②开启事务
+         *  ③添加动作
+         *  ④提交
+         *
+         */
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        if (mShowFragment != null) {
+            //隐藏当前显示的页面
+            transaction.hide(mShowFragment);
+        }
+        mShowFragment = fragmentManager.findFragmentByTag(tag);
+        if (mShowFragment != null) {
+            transaction.show(mShowFragment);
+        } else {
+            try {
+                mShowFragment = (Fragment) Class.forName(tag).newInstance();
+                transaction.add(R.id.activity_main_container, mShowFragment);
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
+        }
+        transaction.commit();
+    }
+
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        /**
+         *  当菜单显示的时候，点击返回，隐藏菜单
+         *  点击提示，再按一次退出
+         *
+         *  ①监听返回键
+         *  ②
+         *
+         */
+        if (KeyEvent.KEYCODE_BACK == keyCode) {
+
+            if (mCover.getVisibility() == View.VISIBLE) {
+                mCover.setVisibility(View.GONE);
+                return true;
+            }
+            //判断条件
+            if (!isExit) {
+                Toast.makeText(this, "再按一次退出", Toast.LENGTH_SHORT).show();
+                isExit = true;
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        isExit = false;
+                    }
+                }, 2 * 1000);
+                return true;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+
+    }
+
+
+    /**
+     * 在Fragment中调用此方法，设置Indicator的位置
+     * offset ： 0-1
+     */
+    public void moveTitleIndicator(float offset) {
+        int width = mHomeTitle.getWidth();
+        mIndicator.setTranslationX(offset * width / 2);
+
+    }
+
+
+    /**
+     * 利用接口回调，将数据传回Fragment
+     * ①定义接口，定义接口中的方法
+     * ②在数据产生的地方持有引用，在数据产生的时候调用接口中的方法
+     * ③在需要处理数据的地方，实现接口，将引用传递到数据产生的地方
+     */
+    public static interface OnTitleClickListener {
+        void onMovieTitleClick();
+
+        void onChannelTitleClick();
+
+    }
 
 
 }
